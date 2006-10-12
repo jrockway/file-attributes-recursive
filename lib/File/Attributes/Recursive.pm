@@ -30,8 +30,6 @@ sub get_attribute_recursively {
     $file = file($file)->absolute;
     $top  = dir($top)->absolute;
 
-    warn "$file <- $top";
-
     if(!$top->subsumes($file)){
 	croak "get_attribute_recursively: filename ($file) must ".
 	  "contain top ($top)";
@@ -44,7 +42,7 @@ sub get_attribute_recursively {
 	};
 	
 	last if defined $result;
-
+	
 	$file = $file->parent;
     }
     

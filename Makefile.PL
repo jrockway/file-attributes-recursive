@@ -13,7 +13,7 @@ abstract_from('lib/File/Attributes/Recursive.pm');
 license('Perl');
 include('ExtUtils::AutoInstall');
 
-requires('File::Spec');
+requires('Path::Class');
 requires('Exporter');
 requires('File::Attributes');
 requires('Cwd');
