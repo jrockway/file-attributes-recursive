@@ -13,7 +13,7 @@ our @EXPORT_OK = qw(get_attribute_recursively  get_attributes_recursively
 our %EXPORT_TAGS = (all => \@EXPORT_OK);
 
 use File::Attributes qw(get_attribute list_attributes);
-use File::Spec;
+use Path::Class;
 use Cwd qw(abs_path);
 use Carp;
 
@@ -26,21 +26,23 @@ sub get_attribute_recursively {
 	$attribute = $top;
 	$top = '/';
     }
-
-    $file = abs_path($file);
-    $top  = abs_path($top);
     
-    if($file !~ /^$top/){
+    $file = file($file)->absolute;
+    $top  = dir($top)->absolute;
+
+    warn "$file <- $top";
+
+    if(!$top->subsumes($file)){
 	croak "get_attribute_recursively: filename ($file) must ".
 	  "contain top ($top)";
     }
     
     my $result;
-    while($file =~ m{^$top}){
+    while($top->subsumes($file)){
 	$result = get_attribute($file, $attribute);
 	last if defined $result;
 
-	$file = _parent($file);
+	$file = $file->parent;
     }
     
     return $result;
@@ -52,25 +54,24 @@ sub get_attributes_recursively {
 
     $top = '/' if !defined $top;
     
-    $file = abs_path($file);
-    $top  = abs_path($top);
-    
-    if($file !~ /^$top/){
+    $file = file($file)->absolute;
+    $top  = dir($top)->absolute;
+
+    if(!$top->subsumes($file)){
 	croak "get_attributes_recursively: filename ($file) must ".
 	  "contain top ($top)";
     }
-
     
     my %result;
-    while($file =~ m{^$top}){
+    while($top->subsumes($file)){
 	my @attributes = list_attributes($file);
-
+	
 	foreach my $attribute (@attributes){
 	    next if exists $result{$attribute};
 	    $result{$attribute} = get_attribute($file, $attribute);
 	}
 	
-	$file = _parent($file);
+	$file = $file->parent;
     }
     
     return %result;
@@ -82,32 +83,22 @@ sub list_attributes_recursively {
 
     $top = '/' if !defined $top;
     
-    $file = abs_path($file);
-    $top  = abs_path($top);
+    $file = file($file)->absolute;
+    $top  = dir($top)->absolute;
     
-    if($file !~ /^$top/){
-	croak "list_attributes_recursively: filename ($file) must ".
+    if(!$top->subsumes($file)){
+	croak "get_attributes_recursively: filename ($file) must ".
 	  "contain top ($top)";
     }
     
     my %results;
-    while($file =~ m{^$top}){
+    while($top->subsumes($file)){
 	my @subresults = list_attributes($file);
 	@results{@subresults} = @subresults;
-	$file = _parent($file);
+	$file = $file->parent;
     }
-
-    return keys %results;
-}
-
-sub _parent {
-    my $path = shift;
-    my ($volume, $dirs, $file) = File::Spec->splitpath($path);
-    my @dirs = File::Spec->splitdir($dirs);
-    $file = pop @dirs;
-    $dirs = File::Spec->catdir(@dirs);
     
-    return File::Spec->catpath($volume, $dirs, $file);
+    return keys %results;
 }
 
 __END__
