@@ -39,7 +39,10 @@ sub get_attribute_recursively {
     
     my $result;
     while($top->subsumes($file)){
-	$result = get_attribute($file, $attribute);
+	eval {
+	    $result = get_attribute($file, $attribute);
+	};
+	
 	last if defined $result;
 
 	$file = $file->parent;
@@ -68,7 +71,9 @@ sub get_attributes_recursively {
 	
 	foreach my $attribute (@attributes){
 	    next if exists $result{$attribute};
-	    $result{$attribute} = get_attribute($file, $attribute);
+	    eval {
+		$result{$attribute} = get_attribute($file, $attribute);
+	    };
 	}
 	
 	$file = $file->parent;
@@ -93,8 +98,10 @@ sub list_attributes_recursively {
     
     my %results;
     while($top->subsumes($file)){
-	my @subresults = list_attributes($file);
-	@results{@subresults} = @subresults;
+	eval {
+	    my @subresults = list_attributes($file);
+	    @results{@subresults} = @subresults;
+	};
 	$file = $file->parent;
     }
     
